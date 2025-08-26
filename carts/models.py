@@ -1,8 +1,10 @@
 from django.db import models
 from store.models import Product,Variantions
+from account.models import CustomUser
 # Create your models here.
 class Cart(models.Model):
     cart_id = models.CharField(max_length=250,blank=True)
+    #user = models.OneToOneField(CustomUser,on_delete=models.CASCADE)
     date_added = models.DateField(auto_now_add=True)
    
     def __str__(self):

@@ -47,7 +47,7 @@
 
 					{% for color in product.variation.color %}
 					    
-						<option value='{{ color.variation_value }}'>{{ color.variation_value }}</option>
+						<option value='{{ color.variation_value }}'>{{ color.variation_value | capfirst }}</option>
                     {% endfor %}
 						
 					

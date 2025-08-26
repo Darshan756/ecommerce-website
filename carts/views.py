@@ -2,12 +2,14 @@ from django.shortcuts import render,HttpResponse,redirect
 from store.models import Product,Variantions
 from .models import Cart,CartItem
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 def _cart_id(request):
      cart = request.session.session_key
      if not cart:
           cart = request.session.create()
      return cart
+@login_required
 def add_cart(request,product_id):
     
     product = Product.objects.get(id=product_id)
@@ -35,14 +37,12 @@ def add_cart(request,product_id):
     
     
     is_cart_item_exits = CartItem.objects.filter(product=product,cart=cart).exists()
-    print(is_cart_item_exits)
     if is_cart_item_exits:
         cart_item = CartItem.objects.filter(product=product,cart=cart)
         print(cart_item)
         ex_var_list = []
         id = []
         for item in cart_item:
-            print(item)
             existing_variation = item.variation.all()
             ex_var_list.append(list(existing_variation))
             id.append(item.id)
@@ -75,7 +75,7 @@ def add_cart(request,product_id):
 
     return redirect('cart')
 
-
+@login_required
 
 def decrease_cart_item(request,cart_item_id):
 
@@ -95,6 +95,7 @@ def decrease_cart_item(request,cart_item_id):
     except CartItem.DoesNotExist:
         pass
     return redirect('cart')
+@login_required
 
 def remove_cart(request,cart_item_id):
     try:
@@ -109,8 +110,10 @@ def remove_cart(request,cart_item_id):
         pass
     return redirect('cart')
 
-
+@login_required
 def cart(request,total=0,quantity=0,cart_items=None):
+    tax=0
+    grand_total=0
     try:
         cart = Cart.objects.get(cart_id=_cart_id(request))
         cart_items=CartItem.objects.filter(cart=cart,is_active=True)

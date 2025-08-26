@@ -28,11 +28,11 @@ class CustomManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser,PermissionsMixin):
+    
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(max_length=100, unique=True)
     phone_number = models.CharField(max_length=15)
-
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
 

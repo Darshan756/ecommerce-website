@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+<!-- ========================= SECTION CONTENT ========================= -->
+
+{% block content %}
+    
+    
+<section class="section-content padding-y">
+
+<!-- ============================ COMPONENT REGISTER   ================================= -->
+	<div class="card mx-auto" style="max-width:520px; margin-top:40px;">
+      <article class="card-body">
+		<header class="mb-4"><h4 class="card-title">Sign up</h4></header>
+		<form action="{% url 'register' %}" method='post'>
+               
+                {% csrf_token %}
+                {% include 'includes/alerts.html' %}
+              
+                    
+				<div class="form-row">
+					<div class="col form-group">
+						<label>{{form.first_name.label}}</label>
+					  	{{ form.first_name }}
+                        
+					</div> <!-- form-group end.// -->
+					<div class="col form-group">
+						<label>{{form.last_name.label}}</label>
+					  	{{ form.last_name }}
+					</div> <!-- form-group end.// -->
+				</div> <!-- form-row end.// -->
+				<div class="form-row">
+                <div class="col  form-group">
+					<label>{{ form.email.label }}</label>
+					{{ form.email }}
+					<small class="form-text text-muted">We'll never share your email with anyone else.</small>
+				</div> <!-- form-group end.// -->
+				
+				
+					<div class="col form-group ">
+					  <label>{{form.phone_number.label}}</label>
+					  {{ form.phone_number }}
+					</div> <!-- form-group end.// -->
+				</div>
+				<div class="form-row">
+					<div class="form-group col-md-6">
+						<label>{{ form.password.label }}</label>
+					    {{ form.password }}
+					</div> <!-- form-group end.// --> 
+					<div class="form-group col-md-6">
+						<label>{{ form.confirm_password.label }}</label>
+					    {{ form.confirm_password }}
+					</div> <!-- form-group end.// -->  
+				</div>
+
+			    <div class="form-group">
+			        <button type="submit" class="btn btn-primary btn-block"> Register  </button>
+			    </div> <!-- form-group// -->      
+			              {% if form.non_field_errors %}
+    {% for error in form.non_field_errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Field errors -->
+    {% for field in form %}
+        <div class="form-group">
+            
+            {% if field.errors %}
+                {% for error in field.errors %}
+                <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            {% endif %}
+                
+            
+        </div>
+    {% endfor %}
+			</form>
+		</article><!-- card-body.// -->
+    </div> <!-- card .// -->
+    <p class="text-center mt-4">Have an account? <a href="{% url 'login' %}">Log In</a></p>
+    <br><br>
+<!-- ============================ COMPONENT REGISTER  END.// ================================= -->
+
+
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
+
+{% endblock content %}

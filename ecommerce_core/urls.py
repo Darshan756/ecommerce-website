@@ -8,7 +8,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('store/',include('store.urls')),
-    path('cart/',include('carts.urls'))
+    path('cart/',include('carts.urls')),
+    path('accounts/',include('account.urls'))
 ]
 
 if settings.DEBUG:  # Serve media files only in development
