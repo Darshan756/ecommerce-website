@@ -11,6 +11,10 @@ from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from account.models import CustomUser
+from carts.models import Cart,CartItem
+from carts.views import _cart_id
+import requests
+
 # Create your views here.
 def register(request):
     if request.method == 'POST':
@@ -60,24 +64,66 @@ def activate(request,uidb64,token):
 def login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
-        if  form.is_valid():
+        if form.is_valid():
             email = form.cleaned_data.get('email')
             password = form.cleaned_data.get('password')
-            try:
-               user = authenticate(email=email,password=password)
-               if user is not None:
-                   if user.is_active:
-                      auth_login(request,user)
-                      messages.success(request,'You are loggedin!')
-                      return redirect('dashboard')  
-               else:
-                    messages.error(request, "Invalid password.")
-            except CustomUser.DoesNotExist:
-                messages.error(request, "User with this email does not exist.")  
+
+            user = authenticate(request, email=email, password=password)
+
+            if user is not None:
+                if user.is_active:
+                    try:
+                        session_cart = Cart.objects.get(cart_id=_cart_id(request))
+                    except Cart.DoesNotExist:
+                        session_cart = None
+
+                    user_cart, created = Cart.objects.get_or_create(user=user)
+
+                    if session_cart:
+                        session_items = CartItem.objects.filter(cart=session_cart)
+
+                        for session_item in session_items:
+                            
+                            session_variations = set(session_item.variation.all())
+                            user_items = CartItem.objects.filter(cart=user_cart, product=session_item.product)
+
+                            merged = False
+                            for user_item in user_items:
+                                if session_variations == set(user_item.variation.all()):
+                                    user_item.quantity += session_item.quantity
+                                    user_item.save()
+                                    merged = True
+                                    break
+
+                            if not merged:
+                                session_item.cart = user_cart
+                                session_item.save(update_fields=["cart"])
+
+                        if session_cart != user_cart:
+                            session_cart.delete()
+
+                    auth_login(request, user)
+                    messages.success(request, 'You are now logged in!')
+                    url = request.META.get('HTTP_REFERER')
+                    try:
+                        query = requests.utils.urlparse(url).query
+                        params = dict(x.split('=') for x in query.split('&'))
+                        if 'next' in params:
+                            nextPage = params['next']
+                            return redirect(nextPage)
+                    except:
+                            return redirect('dashboard')
+
+                else:
+                    messages.error(request, 'Your account is inactive!')
+            else:
+                messages.error(request, 'Invalid email or password')
     else:
         form = LoginForm()
 
-    return render(request,'account/login.html',{'form':form})
+    return render(request, 'account/login.html', {'form': form})
+
+
 
 @login_required(login_url='login')
 def logout(request):

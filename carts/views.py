@@ -9,7 +9,6 @@ def _cart_id(request):
      if not cart:
           cart = request.session.create()
      return cart
-@login_required
 def add_cart(request,product_id):
     
     product = Product.objects.get(id=product_id)
@@ -28,25 +27,27 @@ def add_cart(request,product_id):
 
     
     try:
-       cart = Cart.objects.get(cart_id=_cart_id(request))
+        if request.user.is_authenticated:
+           cart = Cart.objects.get(user=request.user)
+        else:
+           cart = Cart.objects.get(cart_id=_cart_id(request))
     except Cart.DoesNotExist:
-        cart  = Cart.objects.create(
-            cart_id = _cart_id(request)
-        ) 
+        if request.user.is_authenticated:
+           cart = Cart.objects.create(user=request.user)
+        else:
+           cart = Cart.objects.create(cart_id=_cart_id(request))
         cart.save()
     
     
     is_cart_item_exits = CartItem.objects.filter(product=product,cart=cart).exists()
     if is_cart_item_exits:
         cart_item = CartItem.objects.filter(product=product,cart=cart)
-        print(cart_item)
         ex_var_list = []
         id = []
         for item in cart_item:
             existing_variation = item.variation.all()
             ex_var_list.append(list(existing_variation))
             id.append(item.id)
-        print(ex_var_list)
         if product_variations in ex_var_list:
             index = ex_var_list.index(product_variations)
             item_id = id[index]
@@ -75,12 +76,14 @@ def add_cart(request,product_id):
 
     return redirect('cart')
 
-@login_required
 
 def decrease_cart_item(request,cart_item_id):
 
     try:
-       cart = Cart.objects.get(cart_id=_cart_id(request))
+        if request.user.is_authenticated:
+           cart = Cart.objects.get(user=request.user)
+        else:
+           cart = Cart.objects.get(cart_id=_cart_id(request))
     except Cart.DoesNotExist:
         return redirect('cart')
 
@@ -95,11 +98,13 @@ def decrease_cart_item(request,cart_item_id):
     except CartItem.DoesNotExist:
         pass
     return redirect('cart')
-@login_required
 
 def remove_cart(request,cart_item_id):
     try:
-        cart = Cart.objects.get(cart_id=_cart_id(request))
+        if request.user.is_authenticated:
+           cart = Cart.objects.get(user=request.user)
+        else:
+           cart = Cart.objects.get(cart_id=_cart_id(request))
     except Cart.DoesNotExist:
         return redirect('cart')
 
@@ -110,12 +115,14 @@ def remove_cart(request,cart_item_id):
         pass
     return redirect('cart')
 
-@login_required
 def cart(request,total=0,quantity=0,cart_items=None):
     tax=0
     grand_total=0
     try:
-        cart = Cart.objects.get(cart_id=_cart_id(request))
+        if request.user.is_authenticated:
+           cart = Cart.objects.get(user=request.user)
+        else:
+           cart = Cart.objects.get(cart_id=_cart_id(request))
         cart_items=CartItem.objects.filter(cart=cart,is_active=True)
         for cart_item in cart_items:
             total += (cart_item.product.price * cart_item.quantity)
@@ -132,3 +139,29 @@ def cart(request,total=0,quantity=0,cart_items=None):
         'grand_total':grand_total
     }
     return render(request,'carts/cart.html',context)
+
+@login_required(login_url='login')
+def checkout(request,total=0,quantity=0,cart_items=None):
+    tax=0
+    grand_total=0
+    try:
+        if request.user.is_authenticated:
+           cart = Cart.objects.get(user=request.user)
+        else:
+           cart = Cart.objects.get(cart_id=_cart_id(request))
+        cart_items=CartItem.objects.filter(cart=cart,is_active=True)
+        for cart_item in cart_items:
+            total += (cart_item.product.price * cart_item.quantity)
+            quantity += cart_item.quantity
+        tax = total * 2
+        grand_total = total + tax
+    except ObjectDoesNotExist:
+        pass
+    context ={
+        'total':total,
+        'quantity':quantity,
+        'cart_items':cart_items,
+        'tax':tax,
+        'grand_total':grand_total
+    }
+    return render(request, 'carts/checkout.html',context)
